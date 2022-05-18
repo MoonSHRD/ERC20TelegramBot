@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -10,6 +11,7 @@ import (
 //those are variables which we get from User to pass them into a smart-contract
 var exportTokenName string
 var exportTokenSymbol string
+var exportTokenSupply int
 var isERC20Snapshot bool
 
 //variable for asking questions to correct data
@@ -29,9 +31,13 @@ var yesNoKeyboard = tgbotapi.NewReplyKeyboard(
 
 var correctKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Name"),
+		tgbotapi.NewKeyboardButton("Name")),
+
+	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Symbol"),
+		tgbotapi.NewKeyboardButton("Supply"),
 		tgbotapi.NewKeyboardButton("Type")),
+
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("It's all correct"),
 	),
@@ -71,16 +77,34 @@ func main() {
 			}
 		}
 
-		//tokensymbol acquired here, decimals asked, keyboard for type provided
+		//tokenname export acquired here & symbol asked
 		for update := range updates {
 			if update.Message != nil { // If we got a message
 				tokensymbol := update.Message.Text
-				message3 := tokensymbol + ", great. Now let's decide about what type of token you want to use - ERC20 or ERC20Snapshot?"
-				msg3 := tgbotapi.NewMessage(update.Message.Chat.ID, message3)
-				msg3.ReplyMarkup = numericKeyboard
-				bot.Send(msg3)
+				message2 := tokensymbol + ", alright. Now tell me, what's your desired supply of the tokens?"
+				msg1 := tgbotapi.NewMessage(update.Message.Chat.ID, message2)
+				bot.Send(msg1)
 				exportTokenSymbol = tokensymbol
 				break
+			}
+		}
+
+		//tokensymbol acquired here, decimals asked, keyboard for type provided
+		for update := range updates {
+			if update.Message != nil { // If we got a message
+				TokenSupply := update.Message.Text
+				var err2 error
+				exportTokenSupply, err2 = strconv.Atoi(TokenSupply)
+				if err2 == nil {
+					message3 := TokenSupply + " tokens may exist at max, great. Now let's decide about what type of token you want to use - ERC20 or ERC20Snapshot?"
+					msg3 := tgbotapi.NewMessage(update.Message.Chat.ID, message3)
+					msg3.ReplyMarkup = numericKeyboard
+					bot.Send(msg3)
+					break
+				} else {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Please, enter a number of tokens you want to exist!")
+					bot.Send(msg)
+				}
 			}
 		}
 
@@ -96,10 +120,11 @@ func main() {
 						isERC20Snapshot = false
 						ercType = "ERC20"
 					}
-
+					supplyToStr := strconv.Itoa(exportTokenSupply)
 					message4 := "Okay, let's check it.\n \n" +
 						"Token name: " + exportTokenName + "\n" +
 						"Token symbol: " + exportTokenSymbol + "\n" +
+						"Total supply: " + supplyToStr + "\n" +
 						"Token type: " + ercType + "\n \n" +
 						"Is this right?"
 
@@ -127,7 +152,8 @@ func main() {
 					msg5 := tgbotapi.NewMessage(update.Message.Chat.ID, message5)
 					msg5.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 					bot.Send(msg5)
-					log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + ercType)
+					supplyToStr := strconv.Itoa(exportTokenSupply)
+					log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + supplyToStr + " " + ercType)
 					break
 
 					// любой другой приводит к вопросу "что необходимо поменять?"
@@ -144,10 +170,12 @@ func main() {
 							msg5 := tgbotapi.NewMessage(update.Message.Chat.ID, message5)
 							msg5.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 							bot.Send(msg5)
-							log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + ercType)
+							supplyToStr := strconv.Itoa(exportTokenSupply)
+							log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + supplyToStr + " " + ercType)
 							break
 
 						} else {
+
 							switch update.Message.Text {
 
 							case "Name":
@@ -158,15 +186,48 @@ func main() {
 								for update := range updates {
 									if update.Message != nil {
 										exportTokenName = update.Message.Text
+										supplyToStr := strconv.Itoa(exportTokenSupply)
 										checkMsg :=
-											"Token name: " + exportTokenName + "\n" +
+											"Okay, let's check it.\n \n" +
+												"Token name: " + exportTokenName + "\n" +
 												"Token symbol: " + exportTokenSymbol + "\n" +
+												"Total supply: " + supplyToStr + "\n" +
 												"Token type: " + ercType + "\n \n" +
 												"Is it all correct or something needs to be changed?"
 										msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
 										msg.ReplyMarkup = correctKeyboard
 										bot.Send(msg)
 										break
+									}
+								}
+
+							case "Supply":
+								enterSupply := "What's the correct supply?"
+								msg := tgbotapi.NewMessage(update.Message.Chat.ID, enterSupply)
+								msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+								bot.Send(msg)
+								for update := range updates {
+									if update.Message != nil {
+										TokenSupply := update.Message.Text
+										var err2 error
+										exportTokenSupply, err2 = strconv.Atoi(TokenSupply)
+										if err2 == nil {
+											supplyToStr := strconv.Itoa(exportTokenSupply)
+											checkMsg :=
+												"Okay, let's check it.\n \n" +
+													"Token name: " + exportTokenName + "\n" +
+													"Token symbol: " + exportTokenSymbol + "\n" +
+													"Total supply: " + supplyToStr + "\n" +
+													"Token type: " + ercType + "\n \n" +
+													"Is it all correct or something needs to be changed?"
+											msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
+											msg.ReplyMarkup = correctKeyboard
+											bot.Send(msg)
+											break
+										} else {
+											msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Please, enter a number of tokens you want to exist!")
+											bot.Send(msg)
+										}
 									}
 								}
 
@@ -178,9 +239,12 @@ func main() {
 								for update := range updates {
 									if update.Message != nil {
 										exportTokenSymbol = update.Message.Text
+										supplyToStr := strconv.Itoa(exportTokenSupply)
 										checkMsg :=
-											"Token name: " + exportTokenName + "\n" +
+											"Okay, let's check it.\n \n" +
+												"Token name: " + exportTokenName + "\n" +
 												"Token symbol: " + exportTokenSymbol + "\n" +
+												"Total supply: " + supplyToStr + "\n" +
 												"Token type: " + ercType + "\n \n" +
 												"Is it all correct or something needs to be changed?"
 										msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
@@ -205,9 +269,12 @@ func main() {
 											} else {
 												isERC20Snapshot = false
 											}
+											supplyToStr := strconv.Itoa(exportTokenSupply)
 											checkMsg :=
-												"Token name: " + exportTokenName + "\n" +
+												"Okay, let's check it.\n \n" +
+													"Token name: " + exportTokenName + "\n" +
 													"Token symbol: " + exportTokenSymbol + "\n" +
+													"Total supply: " + supplyToStr + "\n" +
 													"Token type: " + ercType + "\n \n" +
 													"Is it all correct or something needs to be changed?"
 											msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
