@@ -11,8 +11,8 @@ import (
 //those are variables which we get from User to pass them into a smart-contract
 var exportTokenName string
 var exportTokenSymbol string
-var exportTokenSupply int
-var exportTokenType int
+var exportTokenSupply uint64
+var exportTokenType uint64
 
 //variable for asking questions to correct data
 var ercType string
@@ -97,7 +97,7 @@ func main() {
 			if update.Message != nil { // If we got a message
 				TokenSupply := update.Message.Text
 				var err2 error
-				exportTokenSupply, err2 = strconv.Atoi(TokenSupply)
+				exportTokenSupply, err2 = strconv.ParseUint(TokenSupply, 10, 64)
 				if err2 == nil {
 					message3 := TokenSupply + " tokens may exist at max, great. Now let's decide about what type of token you want to use - ERC20, ERC20Snapshot or ERC20Votes?"
 					msg3 := tgbotapi.NewMessage(update.Message.Chat.ID, message3)
@@ -126,7 +126,7 @@ func main() {
 						exportTokenType = 2
 						ercType = "ERC20Votes"
 					}
-					supplyToStr := strconv.Itoa(exportTokenSupply)
+					supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
 					message4 := "Okay, let's check it.\n \n" +
 						"Token name: " + exportTokenName + "\n" +
 						"Token symbol: " + exportTokenSymbol + "\n" +
@@ -158,7 +158,7 @@ func main() {
 					msg5 := tgbotapi.NewMessage(update.Message.Chat.ID, message5)
 					msg5.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 					bot.Send(msg5)
-					supplyToStr := strconv.Itoa(exportTokenSupply)
+					supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
 					log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + supplyToStr + " " + ercType)
 					break
 
@@ -176,8 +176,8 @@ func main() {
 							msg5 := tgbotapi.NewMessage(update.Message.Chat.ID, message5)
 							msg5.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 							bot.Send(msg5)
-							supplyToStr := strconv.Itoa(exportTokenSupply)
-							typeToStr := strconv.Itoa(exportTokenType)
+							supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
+							typeToStr := strconv.FormatUint(exportTokenType, 10)
 							log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + supplyToStr + " " + ercType + " " + typeToStr)
 							break
 
@@ -193,7 +193,7 @@ func main() {
 								for update := range updates {
 									if update.Message != nil {
 										exportTokenName = update.Message.Text
-										supplyToStr := strconv.Itoa(exportTokenSupply)
+										supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
 										checkMsg :=
 											"Okay, let's check it.\n \n" +
 												"Token name: " + exportTokenName + "\n" +
@@ -217,9 +217,9 @@ func main() {
 									if update.Message != nil {
 										TokenSupply := update.Message.Text
 										var err2 error
-										exportTokenSupply, err2 = strconv.Atoi(TokenSupply)
+										exportTokenSupply, err2 = strconv.ParseUint(TokenSupply, 10, 64)
 										if err2 == nil {
-											supplyToStr := strconv.Itoa(exportTokenSupply)
+											supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
 											checkMsg :=
 												"Okay, let's check it.\n \n" +
 													"Token name: " + exportTokenName + "\n" +
@@ -246,7 +246,7 @@ func main() {
 								for update := range updates {
 									if update.Message != nil {
 										exportTokenSymbol = update.Message.Text
-										supplyToStr := strconv.Itoa(exportTokenSupply)
+										supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
 										checkMsg :=
 											"Okay, let's check it.\n \n" +
 												"Token name: " + exportTokenName + "\n" +
@@ -281,7 +281,8 @@ func main() {
 												ercType = "ERC20Votes"
 											}
 
-											supplyToStr := strconv.Itoa(exportTokenSupply)
+											supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
+
 											checkMsg :=
 												"Okay, let's check it.\n \n" +
 													"Token name: " + exportTokenName + "\n" +
