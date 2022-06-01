@@ -8,15 +8,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-//those are variables which we get from User to pass them into a smart-contract
-var exportTokenName string
-var exportTokenSymbol string
-var exportTokenSupply uint64
-var exportTokenType uint64
-
-//variable for asking questions to correct data
-var ercType string
-
 var numericKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("ERC20"),
@@ -48,8 +39,22 @@ var correctKeyboard = tgbotapi.NewReplyKeyboard(
 
 var tgApiKey, err = os.ReadFile(".secret")
 
+var bot, error1 = tgbotapi.NewBotAPI(string(tgApiKey))
+
+type user struct {
+	id                int64
+	status            int64
+	exportTokenName   string
+	exportTokenSymbol string
+	exportTokenSupply uint64
+	exportTokenType   uint64
+}
+
+var userDatabase = make(map[int64]user)
+
 func main() {
-	bot, err := tgbotapi.NewBotAPI(string(tgApiKey))
+
+	bot, err = tgbotapi.NewBotAPI(string(tgApiKey))
 	if err != nil {
 		log.Panic(err)
 	}
@@ -63,261 +68,106 @@ func main() {
 
 	//greetings & ask for tokenname
 	for update := range updates {
-		if update.Message != nil { // If we got a message
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Heya, wanna mint your own ERC20, ERC20Snapshot or ERC20Votes? You've come to a right place! Let's begin. Tell me the name of your token!")
-			bot.Send(msg)
-		}
-
-		//tokenname export acquired here & symbol asked
-		for update := range updates {
-			if update.Message != nil { // If we got a message
-				tokenname := update.Message.Text
-				message2 := tokenname + "? That's a cool name! Now tell me the symbol of your token? Usually it's like Bitcoin - BTC, you get the idea"
-				msg1 := tgbotapi.NewMessage(update.Message.Chat.ID, message2)
-				bot.Send(msg1)
-				exportTokenName = tokenname
-				break
-			}
-		}
-
-		//tokensymbol export acquired here & supply asked
-		for update := range updates {
-			if update.Message != nil { // If we got a message
-				tokensymbol := update.Message.Text
-				message2 := tokensymbol + ", alright. Now tell me, what's your desired supply of the tokens?"
-				msg1 := tgbotapi.NewMessage(update.Message.Chat.ID, message2)
-				bot.Send(msg1)
-				exportTokenSymbol = tokensymbol
-				break
-			}
-		}
-
-		//tokensupply acquired here, keyboard for type provided
-		for update := range updates {
-			if update.Message != nil { // If we got a message
-				TokenSupply := update.Message.Text
-				var err2 error
-				exportTokenSupply, err2 = strconv.ParseUint(TokenSupply, 10, 64)
-				if err2 == nil {
-					message3 := TokenSupply + " tokens may exist at max, great. Now let's decide about what type of token you want to use - ERC20, ERC20Snapshot or ERC20Votes?"
-					msg3 := tgbotapi.NewMessage(update.Message.Chat.ID, message3)
-					msg3.ReplyMarkup = numericKeyboard
-					bot.Send(msg3)
-					break
-				} else {
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Please, enter a number of tokens you want to exist!")
-					bot.Send(msg)
-				}
-			}
-		}
-
-		//type acquired here, final check asked
-		for update := range updates {
-			if update.Message != nil {
-
-				if update.Message.Text == "ERC20Snapshot" || update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
-					if update.Message.Text == "ERC20" {
-						exportTokenType = 0
-						ercType = "ERC20"
-					} else if update.Message.Text == "ERC20Snapshot" {
-						exportTokenType = 1
-						ercType = "ERC20Snapshot"
-					} else if update.Message.Text == "ERC20Votes" {
-						exportTokenType = 2
-						ercType = "ERC20Votes"
+		if update.Message != nil {
+			if _, ok := userDatabase[update.Message.From.ID]; ok {
+				if userDatabase[update.Message.From.ID].status == 0 {
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						updateDb.exportTokenName = update.Message.Text
+						updateDb.status = 1
+						userDatabase[update.Message.From.ID] = updateDb
 					}
-					supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
-					message4 := "Okay, let's check it.\n \n" +
-						"Token name: " + exportTokenName + "\n" +
-						"Token symbol: " + exportTokenSymbol + "\n" +
-						"Total supply: " + supplyToStr + "\n" +
-						"Token type: " + ercType + "\n \n" +
-						"Is this right?"
+					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, userDatabase[update.Message.From.ID].exportTokenName+"? That's a cool name! Now tell me the symbol of your token? Usually it's like Bitcoin - BTC, you get the idea")
+					bot.Send(msg)
 
-					msg4 := tgbotapi.NewMessage(update.Message.Chat.ID, message4)
-					msg4.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-					msg4.ReplyMarkup = yesNoKeyboard
-					bot.Send(msg4)
-					break
-				} else {
-					msg4 := tgbotapi.NewMessage(update.Message.Chat.ID, "That's not the type!")
-					bot.Send(msg4)
-				}
-			}
+				} else if userDatabase[update.Message.From.ID].status == 1 {
+					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+						updateDb.exportTokenSymbol = update.Message.Text
+						updateDb.status = 2
+						userDatabase[update.Message.From.ID] = updateDb
+					}
+					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, userDatabase[update.Message.From.ID].exportTokenSymbol+", alright. Now tell me, what's your desired supply of the tokens?")
+					bot.Send(msg)
 
-		}
+				} else if userDatabase[update.Message.From.ID].status == 2 {
+					TokenSupplyString := update.Message.Text
+					tokenSupply, err2 := strconv.ParseUint(TokenSupplyString, 10, 64)
+					if err2 == nil {
+						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+							updateDb.exportTokenSupply = tokenSupply
+							updateDb.status = 3
+							userDatabase[update.Message.From.ID] = updateDb
+						}
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, TokenSupplyString+" tokens may exist at max, great. Now let's decide about what type of token you want to use - ERC20, ERC20Snapshot or ERC20Votes?")
+						msg.ReplyMarkup = numericKeyboard
+						bot.Send(msg)
+					} else {
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Please, enter a number of tokens you want to exist!")
+						bot.Send(msg)
+					}
 
-		//final check happens, form to correct appears
-		for update := range updates {
-			if update.Message != nil {
-				var message5 string
+				} else if userDatabase[update.Message.From.ID].status == 3 {
 
-				//после вопроса все ли ок -- ответ yes приводит к завершению программы
-				if update.Message.Text == "Yes" {
-					message5 = "Cool! Here's the link to confirm and mint your token! (хехе, а это я еще не дописал)" //TODO
-					msg5 := tgbotapi.NewMessage(update.Message.Chat.ID, message5)
-					msg5.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-					bot.Send(msg5)
-					supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
-					log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + supplyToStr + " " + ercType)
-					break
+					if update.Message.Text == "ERC20Snapshot" || update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
 
-					// любой другой приводит к вопросу "что необходимо поменять?"
-				} else {
+						var tokenType uint64
+						var tokenTypeString string
 
-					message5 = "Alright, let's see what's wrong. What do you want to correct?"
-					msg5 := tgbotapi.NewMessage(update.Message.Chat.ID, message5)
-					msg5.ReplyMarkup = correctKeyboard
-					bot.Send(msg5)
-
-					for update := range updates {
-						if update.Message != nil && update.Message.Text == "It's all correct" {
-							message5 = "Cool! Here's the link to confirm and mint your token! (хехе, а это я еще не дописал)" //TODO
-							msg5 := tgbotapi.NewMessage(update.Message.Chat.ID, message5)
-							msg5.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-							bot.Send(msg5)
-							supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
-							typeToStr := strconv.FormatUint(exportTokenType, 10)
-							log.Println("\n СОБРАННЫЕ ДАННЫЕ:" + " " + exportTokenName + " " + exportTokenSymbol + " " + supplyToStr + " " + ercType + " " + typeToStr)
-							break
-
-						} else {
-
-							switch update.Message.Text {
-
-							case "Name":
-								enterName := "What's the correct name?"
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, enterName)
-								msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-								bot.Send(msg)
-								for update := range updates {
-									if update.Message != nil {
-										exportTokenName = update.Message.Text
-										supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
-										checkMsg :=
-											"Okay, let's check it.\n \n" +
-												"Token name: " + exportTokenName + "\n" +
-												"Token symbol: " + exportTokenSymbol + "\n" +
-												"Total supply: " + supplyToStr + "\n" +
-												"Token type: " + ercType + "\n \n" +
-												"Is it all correct or something needs to be changed?"
-										msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
-										msg.ReplyMarkup = correctKeyboard
-										bot.Send(msg)
-										break
-									}
-								}
-
-							case "Supply":
-								enterSupply := "What's the correct supply?"
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, enterSupply)
-								msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-								bot.Send(msg)
-								for update := range updates {
-									if update.Message != nil {
-										TokenSupply := update.Message.Text
-										var err2 error
-										exportTokenSupply, err2 = strconv.ParseUint(TokenSupply, 10, 64)
-										if err2 == nil {
-											supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
-											checkMsg :=
-												"Okay, let's check it.\n \n" +
-													"Token name: " + exportTokenName + "\n" +
-													"Token symbol: " + exportTokenSymbol + "\n" +
-													"Total supply: " + supplyToStr + "\n" +
-													"Token type: " + ercType + "\n \n" +
-													"Is it all correct or something needs to be changed?"
-											msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
-											msg.ReplyMarkup = correctKeyboard
-											bot.Send(msg)
-											break
-										} else {
-											msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Please, enter a number of tokens you want to exist!")
-											bot.Send(msg)
-										}
-									}
-								}
-
-							case "Symbol":
-								enterSymbol := "What's the correct symbol?"
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, enterSymbol)
-								msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-								bot.Send(msg)
-								for update := range updates {
-									if update.Message != nil {
-										exportTokenSymbol = update.Message.Text
-										supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
-										checkMsg :=
-											"Okay, let's check it.\n \n" +
-												"Token name: " + exportTokenName + "\n" +
-												"Token symbol: " + exportTokenSymbol + "\n" +
-												"Total supply: " + supplyToStr + "\n" +
-												"Token type: " + ercType + "\n \n" +
-												"Is it all correct or something needs to be changed?"
-										msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
-										msg.ReplyMarkup = correctKeyboard
-										bot.Send(msg)
-										break
-									}
-								}
-
-							case "Type":
-								enterType := "What's the correct type?"
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, enterType)
-								msg.ReplyMarkup = numericKeyboard
-								bot.Send(msg)
-								for update := range updates {
-									if update.Message != nil {
-										if update.Message.Text == "ERC20Snapshot" || update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
-
-											if update.Message.Text == "ERC20" {
-												exportTokenType = 0
-												ercType = "ERC20"
-											} else if update.Message.Text == "ERC20Snapshot" {
-												exportTokenType = 1
-												ercType = "ERC20Snapshot"
-											} else if update.Message.Text == "ERC20Votes" {
-												exportTokenType = 2
-												ercType = "ERC20Votes"
-											}
-
-											supplyToStr := strconv.FormatUint(exportTokenSupply, 10)
-
-											checkMsg :=
-												"Okay, let's check it.\n \n" +
-													"Token name: " + exportTokenName + "\n" +
-													"Token symbol: " + exportTokenSymbol + "\n" +
-													"Total supply: " + supplyToStr + "\n" +
-													"Token type: " + ercType + "\n \n" +
-													"Is it all correct or something needs to be changed?"
-											msg := tgbotapi.NewMessage(update.Message.Chat.ID, checkMsg)
-											msg.ReplyMarkup = correctKeyboard
-											bot.Send(msg)
-											break
-										} else {
-											msg4 := tgbotapi.NewMessage(update.Message.Chat.ID, "That's not the type!")
-											bot.Send(msg4)
-										}
-									}
-								}
-
-							case "Путин":
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, "хуйло, конечно же :3")
-								bot.Send(msg)
-
-							default:
-								msg := tgbotapi.NewMessage(update.Message.Chat.ID, "That's not a valid command!")
-								bot.Send(msg)
-							}
-
+						if update.Message.Text == "ERC20" {
+							tokenType = 0
+							tokenTypeString = "ERC20"
+						} else if update.Message.Text == "ERC20Snapshot" {
+							tokenType = 1
+							tokenTypeString = "ERC20Snapshot"
+						} else if update.Message.Text == "ERC20Votes" {
+							tokenType = 2
+							tokenTypeString = "ERC20Votes"
 						}
 
+						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
+							updateDb.exportTokenType = tokenType
+							updateDb.status = 4
+							userDatabase[update.Message.From.ID] = updateDb
+						}
+
+						supplyString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenSupply, 10)
+
+						checkMsg := "Okay, let's check it.\n \n" +
+							"Token name: " + userDatabase[update.Message.From.ID].exportTokenName + "\n" +
+							"Token symbol: " + userDatabase[update.Message.From.ID].exportTokenSymbol + "\n" +
+							"Total supply: " + supplyString + "\n" +
+							"Token type: " + tokenTypeString + "\n \n" +
+							"Is this right?"
+
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, checkMsg)
+						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+						msg.ReplyMarkup = yesNoKeyboard
+						bot.Send(msg)
+
+					} else {
+						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "That's not the type!")
+						bot.Send(msg)
+					}
+
+				} else if userDatabase[update.Message.From.ID].status == 4 {
+					if update.Message.Text == "Yes" {
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token!")
+						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+						bot.Send(msg)
+						delete(userDatabase, update.Message.From.ID)
+					}
+
+					if update.Message.Text == "No" { //TODO
 					}
 
 				}
 
-				break
+			} else {
+				userDatabase[update.Message.From.ID] = user{update.Message.Chat.ID, 0, "", "", 0, 0}
+				msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Heya, wanna mint your own ERC20, ERC20Snapshot or ERC20Votes? You've come to a right place! Let's begin. Tell me the name of your token!")
+				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+				bot.Send(msg)
 			}
 		}
+
 	}
 }
