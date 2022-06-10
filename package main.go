@@ -82,18 +82,21 @@ func main() {
 				bot.Send(msg)
 			} else {
 
+				switch userDatabase[update.Message.From.ID].status {
+
 				//first check for user status, (for a new user status 0 is set automatically), then user reply for the first bot message is logged to a database as name AND user status is updated
-				if userDatabase[update.Message.From.ID].status == 0 {
+				case 0:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						updateDb.exportTokenName = update.Message.Text
 						updateDb.status = 1
 						userDatabase[update.Message.From.ID] = updateDb
-					}
-					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, userDatabase[update.Message.From.ID].exportTokenName+"? That's a cool name! Now tell me the symbol of your token? Usually it's like Bitcoin - BTC, you get the idea")
-					bot.Send(msg)
 
-					//logic is that 1 incoming message fro the user equals one status check in database, so each status check ends with the message asking the next question
-				} else if userDatabase[update.Message.From.ID].status == 1 {
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, userDatabase[update.Message.From.ID].exportTokenName+"? That's a cool name! Now tell me the symbol of your token? Usually it's like Bitcoin - BTC, you get the idea")
+						bot.Send(msg)
+					}
+
+				//logic is that 1 incoming message fro the user equals one status check in database, so each status check ends with the message asking the next question
+				case 1:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						updateDb.exportTokenSymbol = update.Message.Text
 						updateDb.status = 2
@@ -102,11 +105,11 @@ func main() {
 					msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, userDatabase[update.Message.From.ID].exportTokenSymbol+", alright. Now tell me, what's your desired supply of the tokens?")
 					bot.Send(msg)
 
-					//decimals asked, check if user input is uint, token type asked, keyboard is provided
-				} else if userDatabase[update.Message.From.ID].status == 2 {
+				//decimals asked, check if user input is uint, token type asked, keyboard is provided
+				case 2:
 					TokenSupplyString := update.Message.Text
 					tokenSupply, err2 := strconv.ParseUint(TokenSupplyString, 10, 64)
-					if err2 == nil {
+					if err2 == nil && tokenSupply > 0 {
 						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 							updateDb.exportTokenSupply = tokenSupply
 							updateDb.status = 3
@@ -120,9 +123,8 @@ func main() {
 						bot.Send(msg)
 					}
 
-					//desired tokentype asked here, it is collected both as string and uint numbers. string is used inside this program, uint is exported. check message asked
-				} else if userDatabase[update.Message.From.ID].status == 3 {
-
+				//desired tokentype asked here, it is collected both as string and uint numbers. string is used inside this program, uint is exported. check message asked
+				case 3:
 					if update.Message.Text == "ERC20Snapshot" || update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
 
 						var tokenType uint64
@@ -168,7 +170,7 @@ func main() {
 					//after check message is sent, keyboard is provided. if user answers yes, link to a front-end (WIP) is provided, his entry in the database is deleted, so
 					//next time the same user contacts the bot, the process will begin all over again
 					//any other answer than "yes" brings the options to correct the info
-				} else if userDatabase[update.Message.From.ID].status == 4 {
+				case 4:
 					if update.Message.Text == "Yes" || update.Message.Text == "It's all correct" {
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token!")
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
@@ -186,8 +188,10 @@ func main() {
 					}
 
 					//status 5-9 are used for data correction
-				} else if userDatabase[update.Message.From.ID].status == 5 {
-					if update.Message.Text == "Name" {
+				case 5:
+					switch update.Message.Text {
+
+					case "Name":
 						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 							updateDb.status = 6
 							userDatabase[update.Message.From.ID] = updateDb
@@ -196,7 +200,7 @@ func main() {
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
 
-					} else if update.Message.Text == "Symbol" {
+					case "Symbol":
 						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 							updateDb.status = 7
 							userDatabase[update.Message.From.ID] = updateDb
@@ -205,7 +209,7 @@ func main() {
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
 
-					} else if update.Message.Text == "Supply" {
+					case "Supply":
 						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 							updateDb.status = 8
 							userDatabase[update.Message.From.ID] = updateDb
@@ -214,7 +218,7 @@ func main() {
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
 
-					} else if update.Message.Text == "Type" {
+					case "Type":
 						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 							updateDb.status = 9
 							userDatabase[update.Message.From.ID] = updateDb
@@ -224,13 +228,13 @@ func main() {
 						bot.Send(msg)
 
 						//keyboard is provided, so whenever user input this one, the link is provided and user entry is deleted from the database
-					} else if update.Message.Text == "It's all correct" {
+					case "It's all correct":
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token!")
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
 						delete(userDatabase, update.Message.From.ID)
 
-					} else {
+					default:
 						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Please, select what needs to be edited!")
 						bot.Send(msg)
 					}
@@ -239,7 +243,7 @@ func main() {
 					//so if something else needs to be corrected, it may be done infinitely, process terminates when the input is "it's all correct"
 
 					//name edit
-				} else if userDatabase[update.Message.From.ID].status == 6 {
+				case 6:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						updateDb.exportTokenName = update.Message.Text
 						updateDb.status = 5
@@ -258,8 +262,8 @@ func main() {
 					msg.ReplyMarkup = correctKeyboard
 					bot.Send(msg)
 
-					//symbol edit
-				} else if userDatabase[update.Message.From.ID].status == 7 {
+				//symbol edit
+				case 7:
 					if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 						updateDb.exportTokenSymbol = update.Message.Text
 						updateDb.status = 5
@@ -279,11 +283,11 @@ func main() {
 					msg.ReplyMarkup = correctKeyboard
 					bot.Send(msg)
 
-					//decimals edit
-				} else if userDatabase[update.Message.From.ID].status == 8 {
+				//supply edit
+				case 8:
 					TokenSupplyString := update.Message.Text
 					tokenSupply, err2 := strconv.ParseUint(TokenSupplyString, 10, 64)
-					if err2 == nil {
+					if err2 == nil && tokenSupply > 0 {
 						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 							updateDb.exportTokenSupply = tokenSupply
 							updateDb.status = 5
@@ -306,9 +310,8 @@ func main() {
 						bot.Send(msg)
 					}
 
-					//type edit
-				} else if userDatabase[update.Message.From.ID].status == 9 {
-
+				//type edit
+				case 9:
 					if update.Message.Text == "ERC20Snapshot" || update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
 
 						var tokenType uint64
@@ -350,6 +353,5 @@ func main() {
 				}
 			}
 		}
-
 	}
 }
