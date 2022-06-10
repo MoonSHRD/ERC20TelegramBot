@@ -172,18 +172,26 @@ func main() {
 					//any other answer than "yes" brings the options to correct the info
 				case 4:
 					if update.Message.Text == "Yes" || update.Message.Text == "It's all correct" {
-						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token!")
+						supplyString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenSupply, 10)
+						typeString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenType, 10)
+
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token! \n https://coolsite.com/?name="+userDatabase[update.Message.From.ID].exportTokenName+"&symbol="+userDatabase[update.Message.From.ID].exportTokenSymbol+"&supply="+supplyString+"&type="+typeString)
+
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
 						delete(userDatabase, update.Message.From.ID)
 
-					} else {
+					} else if update.Message.Text == "No" {
 						if updateDb, ok := userDatabase[update.Message.From.ID]; ok {
 							updateDb.status = 5
 							userDatabase[update.Message.From.ID] = updateDb
 						}
 						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "What needs to be corrected?")
 						msg.ReplyMarkup = correctKeyboard
+						bot.Send(msg)
+
+					} else {
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "That was a Yes/No question...")
 						bot.Send(msg)
 					}
 
@@ -229,7 +237,10 @@ func main() {
 
 						//keyboard is provided, so whenever user input this one, the link is provided and user entry is deleted from the database
 					case "It's all correct":
-						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token!")
+						supplyString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenSupply, 10)
+						typeString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenType, 10)
+
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token! \n https://coolsite.com/?name="+userDatabase[update.Message.From.ID].exportTokenName+"&symbol="+userDatabase[update.Message.From.ID].exportTokenSymbol+"&supply="+supplyString+"&type="+typeString)
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
 						delete(userDatabase, update.Message.From.ID)
