@@ -175,7 +175,7 @@ func main() {
 						supplyString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenSupply, 10)
 						typeString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenType, 10)
 
-						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token! \n https://coolsite.com/?name="+userDatabase[update.Message.From.ID].exportTokenName+"&symbol="+userDatabase[update.Message.From.ID].exportTokenSymbol+"&supply="+supplyString+"&type="+typeString)
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token! \n http://localhost:3000/?name="+userDatabase[update.Message.From.ID].exportTokenName+"&symbol="+userDatabase[update.Message.From.ID].exportTokenSymbol+"&supply="+supplyString+"&type="+typeString)
 
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
@@ -240,7 +240,7 @@ func main() {
 						supplyString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenSupply, 10)
 						typeString := strconv.FormatUint(userDatabase[update.Message.From.ID].exportTokenType, 10)
 
-						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token! \n https://coolsite.com/?name="+userDatabase[update.Message.From.ID].exportTokenName+"&symbol="+userDatabase[update.Message.From.ID].exportTokenSymbol+"&supply="+supplyString+"&type="+typeString)
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Here's the link to mint your token! \n http://localhost:3000/?name="+userDatabase[update.Message.From.ID].exportTokenName+"&symbol="+userDatabase[update.Message.From.ID].exportTokenSymbol+"&supply="+supplyString+"&type="+typeString)
 						msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 						bot.Send(msg)
 						delete(userDatabase, update.Message.From.ID)
