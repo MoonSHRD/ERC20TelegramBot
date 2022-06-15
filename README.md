@@ -18,6 +18,7 @@ Then you may communicate with your telegram bot which will provide you the link 
 Factory smart-contract is currently deployed on Goerli testnet, so you'll need Goerli test eth to operate it.
 
 Link to Factory contract on Etherscan: https://goerli.etherscan.io/address/0xAf5B8690245087a57128ec9543931574fDfAB4f1
+
 Link to Factory contract's repo: https://github.com/daseinsucks/ERC20Factory
 
 
