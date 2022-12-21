@@ -8,11 +8,10 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-//Those are keyboards that appear for some of the questions
+// Those are keyboards that appear for some of the questions
 var numericKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("ERC20"),
-		tgbotapi.NewKeyboardButton("ERC20Snapshot"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("ERC20Votes")),
@@ -38,11 +37,11 @@ var correctKeyboard = tgbotapi.NewReplyKeyboard(
 	),
 )
 
-//to operate the bot, put a text file containing key for your bot acquired from telegram "botfather" to the same directory with this file
+// to operate the bot, put a text file containing key for your bot acquired from telegram "botfather" to the same directory with this file
 var tgApiKey, err = os.ReadFile(".secret")
 var bot, error1 = tgbotapi.NewBotAPI(string(tgApiKey))
 
-//type containing all the info about user input
+// type containing all the info about user input
 type user struct {
 	id                int64
 	status            int64
@@ -53,7 +52,7 @@ type user struct {
 	tokenTypeString   string
 }
 
-//main database, key (int64) is telegram user id
+// main database, key (int64) is telegram user id
 var userDatabase = make(map[int64]user)
 
 func main() {
@@ -77,8 +76,9 @@ func main() {
 			if _, ok := userDatabase[update.Message.From.ID]; !ok {
 
 				userDatabase[update.Message.From.ID] = user{update.Message.Chat.ID, 0, "", "", 0, 0, ""}
-				msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Heya, wanna mint your own ERC20, ERC20Snapshot or ERC20Votes? You've come to the right place! Let's begin. Tell me the name of your token!")
+				msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, "Heya, wanna mint your own ERC20 Aor ERC20Votes? You've come to the right place! Let's begin. Tell me the name of your token!")
 				msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+				msg.ParseMode = "Markdown"
 				bot.Send(msg)
 			} else {
 
@@ -115,7 +115,7 @@ func main() {
 							updateDb.status = 3
 							userDatabase[update.Message.From.ID] = updateDb
 						}
-						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, TokenSupplyString+" tokens may exist at max, great. Now let's decide about what type of token you want to use - ERC20, ERC20Snapshot or ERC20Votes?")
+						msg := tgbotapi.NewMessage(userDatabase[update.Message.From.ID].id, TokenSupplyString+" tokens may exist at max, great. Now let's decide about what type of token you want to use - ERC20 or ERC20Votes?")
 						msg.ReplyMarkup = numericKeyboard
 						bot.Send(msg)
 					} else {
@@ -125,7 +125,7 @@ func main() {
 
 				//desired tokentype asked here, it is collected both as string and uint numbers. string is used inside this program, uint is exported. check message asked
 				case 3:
-					if update.Message.Text == "ERC20Snapshot" || update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
+					if update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
 
 						var tokenType uint64
 						var tokenTypeString string
@@ -133,11 +133,8 @@ func main() {
 						if update.Message.Text == "ERC20" {
 							tokenType = 0
 							tokenTypeString = "ERC20"
-						} else if update.Message.Text == "ERC20Snapshot" {
-							tokenType = 1
-							tokenTypeString = "ERC20Snapshot"
 						} else if update.Message.Text == "ERC20Votes" {
-							tokenType = 2
+							tokenType = 1
 							tokenTypeString = "ERC20Votes"
 						}
 
@@ -323,7 +320,7 @@ func main() {
 
 				//type edit
 				case 9:
-					if update.Message.Text == "ERC20Snapshot" || update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
+					if update.Message.Text == "ERC20" || update.Message.Text == "ERC20Votes" {
 
 						var tokenType uint64
 						var tokenTypeString string
@@ -331,11 +328,8 @@ func main() {
 						if update.Message.Text == "ERC20" {
 							tokenType = 0
 							tokenTypeString = "ERC20"
-						} else if update.Message.Text == "ERC20Snapshot" {
-							tokenType = 1
-							tokenTypeString = "ERC20Snapshot"
 						} else if update.Message.Text == "ERC20Votes" {
-							tokenType = 2
+							tokenType = 1
 							tokenTypeString = "ERC20Votes"
 						}
 

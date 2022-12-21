@@ -4,7 +4,7 @@ const { createAlchemyWeb3 } = require("@alch/alchemy-web3");
 const web3 = createAlchemyWeb3(alchemyKey); 
 
 const contractABI = require("../contract-abi.json");
-const contractAddress = "0xAf5B8690245087a57128ec9543931574fDfAB4f1";
+const contractAddress = "0xba21F89882eF51Ac6251137948676a3b5536E207";
 
 export const factoryContract = new web3.eth.Contract(
     contractABI,
@@ -124,7 +124,7 @@ export const connectWallet = async () => {
       status: (
         <span>
           ✅{" "}
-          <a target="_blank" href={`https://goerli.etherscan.io/tx/${txHash}`}>
+          <a target="_blank" href={`https://polygonscan.com/tx/${txHash}`}>
             View the status of your transaction on Etherscan!
           </a>
           <br />

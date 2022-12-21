@@ -21,14 +21,14 @@ const HelloWorld = () => {
   const queryParams = new URLSearchParams(window.location.search);
 
 
-
+//http://localhost:3000/?name=aaa&symbol=bbb&supply=9000&type=1
   //called only once
   useEffect(async () => {
     addSmartContractListener();
-    const name = queryParams.get('name');
-    const symbol = queryParams.get('symbol');
-    const supply = queryParams.get('supply');
-    const type = queryParams.get('type');
+    var name = queryParams.get('name');
+    var symbol = queryParams.get('symbol');
+    var supply = queryParams.get('supply');
+    var type = queryParams.get('type');
 
     setTokenName(name);
     setTokenTicker(symbol);
@@ -119,7 +119,6 @@ const HelloWorld = () => {
       <div>
         <input
           type="text"
-          disabled = "true"
           placeholder="Token name."
           onChange={(e) => setTokenName(e.target.value)}
           value={tokenName}
@@ -127,7 +126,6 @@ const HelloWorld = () => {
 
         <input
           type="text"
-          disabled = "true"
           placeholder="Token ticker."
           onChange={(e) => setTokenTicker(e.target.value)}
           value={tokenTicker}
@@ -135,7 +133,6 @@ const HelloWorld = () => {
 
         <input
           type="text"
-          disabled = "true"
           placeholder="Token supply."
           onChange={(e) => setTokenDecimals(e.target.value)}
           value={tokenDecimals}
@@ -143,7 +140,6 @@ const HelloWorld = () => {
 
         <input
           type="text"
-          disabled = "true"
           placeholder="Token type."
           onChange={(e) => setTokenType(e.target.value)}
           value={tokenType}
